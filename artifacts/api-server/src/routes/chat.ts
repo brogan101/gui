@@ -16,10 +16,12 @@ import { writeManagedJson } from "../lib/snapshot-manager.js";
 import { thoughtLog } from "../lib/thought-log.js";
 import { toolsRoot } from "../lib/runtime.js";
 import {
+  runSupervisorPipeline,
   analyzeMessages,
   activateSupervisorPlan,
   agentDisplayName,
 } from "../lib/supervisor-agent.js";
+import type { RoutingHint } from "../lib/model-orchestrator.js";
 
 const router = Router();
 
@@ -117,11 +119,18 @@ router.post("/chat/send", async (req, res) => {
   }
 
   try {
-    // Supervisor analysis — determines task category, plan, and model routing
-    const supervisorPlan = analyzeMessages(messages, model || undefined);
-    await activateSupervisorPlan(supervisorPlan);
-    // Use supervisor's suggested model when no manual override was provided
-    const resolvedModel = model || supervisorPlan.suggestedModel;
+    // Full narrated supervisor pipeline — classifies, plans, updates GlobalState,
+    // and streams real-time reasoning to the Thought Log before any LLM call.
+    const supervisorPlan = await runSupervisorPipeline(messages, model || undefined);
+    const resolvedModel  = model || supervisorPlan.suggestedModel;
+
+    // Build the routing hint so model-orchestrator skips duplicate inference.
+    const routingHint: RoutingHint = {
+      supervisorIntent:        supervisorPlan.category === "coding"   ? "code"
+                             : supervisorPlan.category === "hardware" ? "vision"
+                             : "general",
+      supervisorSuggestedModel: supervisorPlan.suggestedModel,
+    };
 
     const codeContext = await maybeBuildCodeContext(messages, workspacePath, useCodeContext);
     const upstreamMessages: ChatMessage[] = codeContext
@@ -139,10 +148,11 @@ router.post("/chat/send", async (req, res) => {
         supervisorCategory: supervisorPlan.category,
         supervisorConfidence: supervisorPlan.confidence,
         manualOverride: supervisorPlan.manualOverride,
+        routingIntent: routingHint.supervisorIntent,
       },
     });
 
-    const result = await sendGatewayChat(upstreamMessages, resolvedModel || undefined);
+    const result = await sendGatewayChat(upstreamMessages, resolvedModel || undefined, routingHint);
     const assistantMsg: ChatMessage = { role: "assistant", content: result.message };
     const persistedModel = result.model;
 
@@ -215,10 +225,16 @@ router.post("/chat/stream", async (req, res) => {
   }
 
   try {
-    // Supervisor analysis
-    const supervisorPlan = analyzeMessages(messages, model || undefined);
-    await activateSupervisorPlan(supervisorPlan);
-    const resolvedModel = model || supervisorPlan.suggestedModel;
+    // Full narrated supervisor pipeline — real-time reasoning pushed to Thought Log.
+    const supervisorPlan = await runSupervisorPipeline(messages, model || undefined);
+    const resolvedModel  = model || supervisorPlan.suggestedModel;
+
+    const routingHint: RoutingHint = {
+      supervisorIntent:         supervisorPlan.category === "coding"   ? "code"
+                              : supervisorPlan.category === "hardware" ? "vision"
+                              : "general",
+      supervisorSuggestedModel: supervisorPlan.suggestedModel,
+    };
 
     const codeContext = await maybeBuildCodeContext(messages, workspacePath, useCodeContext);
     const upstreamMessages: ChatMessage[] = codeContext
@@ -235,6 +251,7 @@ router.post("/chat/stream", async (req, res) => {
         contextAttached: !!codeContext,
         supervisorCategory: supervisorPlan.category,
         supervisorConfidence: supervisorPlan.confidence,
+        routingIntent: routingHint.supervisorIntent,
       },
     });
 
@@ -250,8 +267,9 @@ router.post("/chat/stream", async (req, res) => {
     };
 
     await streamGatewayChatToSse(res, {
-      messages: upstreamMessages,
+      messages:       upstreamMessages,
       requestedModel: resolvedModel || undefined,
+      routingHint,
       initialPayloads: [
         supervisorPayload,
         ...(codeContext ? [{ context: contextMetadata(codeContext) }] : []),
