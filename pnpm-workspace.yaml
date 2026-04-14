@@ -1,0 +1,4 @@
+packages:
+  - "artifacts/api-server"
+  - "artifacts/localai-control-center"
+  - "lib/*"

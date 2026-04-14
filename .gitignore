@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Source maps (large, not useful in repo)
+*.mjs.map
+*.js.map
+*.d.ts.map
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+runtime/
+artifacts/api-server/WorldGUI/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# Editor
+.idea/
+*.swp
+*.swo
+*.suo
+*.user
+
+# pnpm
+.pnpm-store/
+
+# Vite cache
+.vite/
+
+# Temporary files
+*.bak
+*.tmp
+*.temp
+"New Text Document.txt"
+
+# LocalAI backup directories (created by snapshot-manager)
+.localai-backups/
+
+# Claude Code local settings (not committed)
+.claude/settings.local.json

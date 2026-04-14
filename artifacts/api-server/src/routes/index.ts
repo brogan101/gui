@@ -1,0 +1,48 @@
+import { Router } from "express";
+import health from "./health.js";
+import stack from "./stack.js";
+import models from "./models.js";
+import workspace from "./workspace.js";
+import system from "./system.js";
+import updates from "./updates.js";
+import continueRoute from "./continue.js";
+import studios from "./studios.js";
+import remote from "./remote.js";
+import chat from "./chat.js";
+import filebrowser from "./filebrowser.js";
+import context from "./context.js";
+import intelligence from "./intelligence.js";
+import integrations from "./integrations.js";
+import usage from "./usage.js";
+import updater from "./updater.js";
+import repair from "./repair.js";
+import kernel from "./kernel.js";
+import observability from "./observability.js";
+import tasks from "./tasks.js";
+import rollback from "./rollback.js";
+
+const router = Router();
+
+router.use(health);
+router.use(stack);
+router.use(models);
+router.use(workspace);
+router.use(system);
+router.use(updates);
+router.use(continueRoute);
+router.use(studios);
+router.use(remote);
+router.use(chat);
+router.use(filebrowser);
+router.use(context);
+router.use(intelligence);
+router.use(integrations);
+router.use(usage);
+router.use(updater);
+router.use(repair);
+router.use(kernel);
+router.use(observability);
+router.use(tasks);
+router.use(rollback);
+
+export default router;

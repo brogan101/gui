@@ -1,0 +1,3 @@
+[submodule "artifacts/api-server/WorldGUI"]
+	path = artifacts/api-server/WorldGUI
+	url = https://github.com/showlab/WorldGUI

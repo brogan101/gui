@@ -1,0 +1,7 @@
+{
+  "files": [],
+  "references": [
+    { "path": "artifacts/api-server" },
+    { "path": "artifacts/localai-control-center" }
+  ]
+}
